@@ -2,6 +2,7 @@
 const nextConfig = {
   reactStrictMode: true,
   output: 'export',
+  basePath: process.env.GITHUB_PAGES === 'true' ? '/SentinelFlow-Copy' : '',
   images: {
     unoptimized: true,
   },
