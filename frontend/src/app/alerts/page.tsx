@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, Suspense } from 'react';
+import React, { useCallback, useEffect, useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { fetchApi } from '@/lib/api-client';
 import { AppShell } from '@/components/layout/app-shell';
@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { LoadingState } from '@/components/shared/loading-state';
 import { useToast } from '@/components/shared/toast';
+import { StatusBadge } from '@/components/shared/status-badge';
 
 function AlertsContent() {
   const { showToast } = useToast();
@@ -25,17 +26,7 @@ function AlertsContent() {
   const [severityFilter, setSeverityFilter] = useState<string>('ALL');
   const [search, setSearch] = useState<string>('');
 
-  useEffect(() => {
-    loadAlerts();
-  }, []);
-
-  // Handle direct navigation to a specific alert via query param ?id=...
-  useEffect(() => {
-    if (!targetAlertId) return;
-    handleInvestigate(targetAlertId);
-  }, [targetAlertId]);
-
-  async function loadAlerts() {
+  const loadAlerts = useCallback(async () => {
     setLoading(true);
     try {
       const res = await fetchApi<any>('/alerts?page_size=50');
@@ -45,16 +36,16 @@ function AlertsContent() {
     } finally {
       setLoading(false);
     }
-  }
+  }, []);
 
-  async function handleInvestigate(alertId: string) {
+  const handleInvestigate = useCallback(async (alertId: string) => {
     setInvestigatingId(alertId);
     try {
       const res = await fetchApi<any>(`/alerts/${alertId}/investigate`, { method: 'POST' });
       if (res.scam_dossier) {
         setSelectedDossier(res.scam_dossier);
         setModalOpen(true);
-        loadAlerts();
+        void loadAlerts();
         showToast({
           type: 'success',
           title: 'Investigation Initialized',
@@ -70,7 +61,16 @@ function AlertsContent() {
     } finally {
       setInvestigatingId(null);
     }
-  }
+  }, [loadAlerts, showToast]);
+
+  useEffect(() => {
+    void loadAlerts();
+  }, [loadAlerts]);
+
+  useEffect(() => {
+    if (!targetAlertId) return;
+    void handleInvestigate(targetAlertId);
+  }, [targetAlertId, handleInvestigate]);
 
   const filteredAlerts = alerts.filter(a => {
     if (severityFilter !== 'ALL' && a.severity !== severityFilter) return false;
@@ -256,28 +256,6 @@ function AlertsContent() {
                       >
                         <ScrollText className="w-3 h-3 text-slate-400" />
                         <span>Full Audit</span>
-                      </Link>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-                        title="Open or convert this alert into an investigation case dossier"
-                      >
-                        <Briefcase className="w-3 h-3" />
-                        <span>{investigatingId === a.id ? 'Loading...' : 'Open Case'}</span>
-                      </button>
-
-                      {/* Open Full Audit Action */}
-                      <Link
-                        href={`/audit?resource_id=${a.id}&resource_type=ALERT`}
-                        className="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-mono text-[11px] px-2.5 py-1.5 rounded-lg font-bold shadow-sm transition flex items-center space-x-1"
-                        title="Open immutable cryptographic audit logs for this alert"
-                      >
-                        <ScrollText className="w-3 h-3" />
-                        <span>Open Full Audit</span>
                       </Link>
                     </div>
                   </td>

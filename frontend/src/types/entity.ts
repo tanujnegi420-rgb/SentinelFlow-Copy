@@ -1,5 +1,5 @@
 export type EntityType = 'ACCOUNT' | 'CUSTOMER' | 'IP' | 'DEVICE' | 'BENEFICIARY';
-export type RiskLevel = 'ROUTINE' | 'LOW' | 'ELEVATED' | 'HIGH' | 'CRITICAL';
+export type RiskLevel = 'ROUTINE' | 'LOW' | 'MEDIUM' | 'ELEVATED' | 'HIGH' | 'CRITICAL';
 
 export interface GraphNode {
   id: string;
